@@ -3,13 +3,14 @@
 from dice import four_sided, six_sided, make_test_dice
 from ucb import main, trace, log_current_line, interact
 
-GOAL_SCORE = 100 # The goal of Hog is to score 100 points.
+GOAL_SCORE = 100   # The goal of Hog is to score 100 points.
 
 ######################
 # Phase 1: Simulator #
 ######################
 
 # Taking turns
+
 
 def roll_dice(num_rolls, dice=six_sided):
     """Roll DICE for NUM_ROLLS times.  Return either the sum of the outcomes,
@@ -22,6 +23,16 @@ def roll_dice(num_rolls, dice=six_sided):
     assert type(num_rolls) == int, 'num_rolls must be an integer.'
     assert num_rolls > 0, 'Must roll at least once.'
     "*** YOUR CODE HERE ***"
+    sum, result = 0, 0
+    for i in range(num_rolls):
+        num = dice()
+        if num == 1:
+            result = 1
+        else:
+            sum = sum + num
+    if result:
+        return result
+    return sum
 
 
 def take_turn(num_rolls, opponent_score, dice=six_sided):
@@ -36,8 +47,13 @@ def take_turn(num_rolls, opponent_score, dice=six_sided):
     assert num_rolls <= 10, 'Cannot roll more than 10 dice.'
     assert opponent_score < 100, 'The game should be over.'
     "*** YOUR CODE HERE ***"
+    if num_rolls == 0:
+        return 1 + max(opponent_score % 10, int(opponent_score/10))
+    else:
+        return roll_dice(num_rolls, dice)
 
 # Playing a game
+
 
 def select_dice(score, opponent_score):
     """Select six-sided dice unless the sum of SCORE and OPPONENT_SCORE is a
@@ -51,6 +67,9 @@ def select_dice(score, opponent_score):
     True
     """
     "*** YOUR CODE HERE ***"
+    return (four_sided if (score + opponent_score) % 7 == 0
+            else six_sided)
+
 
 def other(who):
     """Return the other player, for a player WHO numbered 0 or 1.
@@ -61,6 +80,7 @@ def other(who):
     0
     """
     return 1 - who
+
 
 def play(strategy0, strategy1, goal=GOAL_SCORE):
     """Simulate a game and return the final scores of both players, with
@@ -76,6 +96,23 @@ def play(strategy0, strategy1, goal=GOAL_SCORE):
     who = 0  # Which player is about to take a turn, 0 (first) or 1 (second)
     score, opponent_score = 0, 0
     "*** YOUR CODE HERE ***"
+    while score < 100 and opponent_score < 100:
+        if who == 0:
+            num_rolls = strategy0(score, opponent_score)
+            current_dice = select_dice(score, opponent_score)
+            score = score + take_turn(num_rolls, opponent_score, current_dice)
+            if score == 2*opponent_score or score*2 == opponent_score:
+                score, opponent_score = opponent_score, score
+            if score < 100 and opponent_score < 100:
+                who = other(0)
+        if who == 1:
+            num_rolls = strategy1(opponent_score, score)
+            current_dice = select_dice(score, opponent_score)
+            opponent_score = opponent_score + take_turn(num_rolls,
+                                                        score, current_dice)
+            if score == 2*opponent_score or score*2 == opponent_score:
+                score, opponent_score = opponent_score, score
+            who = other(1)
     return score, opponent_score  # You may wish to change this line.
 
 #######################
