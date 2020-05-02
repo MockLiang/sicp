@@ -121,8 +121,10 @@ def play(strategy0, strategy1, goal=GOAL_SCORE):
 
 # Basic Strategy
 
+
 BASELINE_NUM_ROLLS = 5
 BACON_MARGIN = 8
+
 
 def always_roll(n):
     """Return a strategy that always rolls N dice.
@@ -143,6 +145,7 @@ def always_roll(n):
 
 # Experiments
 
+
 def make_averaged(fn, num_samples=1000):
     """Return a function that returns the average_value of FN when called.
 
@@ -162,6 +165,13 @@ def make_averaged(fn, num_samples=1000):
     Thus, the average value is 6.0.
     """
     "*** YOUR CODE HERE ***"
+    def call_fn(*args):
+        sum = 0
+        for i in range(num_samples):
+            sum = sum + fn(*args)
+        return sum / num_samples
+    return call_fn
+
 
 def max_scoring_num_rolls(dice=six_sided):
     """Return the number of dice (1 to 10) that gives the highest average turn
@@ -183,6 +193,16 @@ def max_scoring_num_rolls(dice=six_sided):
     10
     """
     "*** YOUR CODE HERE ***"
+    max = 0
+    max_index = 0
+    for i in range(10):
+        avg_score = make_averaged(roll_dice, 10000)(i + 1, dice)
+        print(i + 1, "dice scores", avg_score, "on average")
+        if avg_score > max:
+            max = avg_score
+            max_index = i + 1
+    return max_index
+
 
 def winner(strategy0, strategy1):
     """Return 0 if strategy0 wins against strategy1, and 1 otherwise."""
@@ -198,9 +218,10 @@ def average_win_rate(strategy, baseline=always_roll(BASELINE_NUM_ROLLS)):
     win_rate_as_player_1 = make_averaged(winner)(baseline, strategy)
     return (win_rate_as_player_0 + win_rate_as_player_1) / 2 # Average results
 
+
 def run_experiments():
     """Run a series of strategy experiments and report results."""
-    if True: # Change to False when done finding max_scoring_num_rolls
+    if False: # Change to False when done finding max_scoring_num_rolls
         six_sided_max = max_scoring_num_rolls(six_sided)
         print('Max scoring num rolls for six-sided dice:', six_sided_max)
         four_sided_max = max_scoring_num_rolls(four_sided)
@@ -215,12 +236,13 @@ def run_experiments():
     if False: # Change to True to test swap_strategy
         print('swap_strategy win rate:', average_win_rate(swap_strategy))
 
-    if False: # Change to True to test final_strategy
+    if True: # Change to True to test final_strategy
         print('final_strategy win rate:', average_win_rate(final_strategy))
 
     "*** You may add additional experiments as you wish ***"
 
 # Strategies
+
 
 def bacon_strategy(score, opponent_score):
     """This strategy rolls 0 dice if that gives at least BACON_MARGIN points,
@@ -234,7 +256,13 @@ def bacon_strategy(score, opponent_score):
     0
     """
     "*** YOUR CODE HERE ***"
-    return 5 # Replace this statement
+    return (0 if 1 + max(opponent_score % 10, int(opponent_score/10))
+            >= BACON_MARGIN else BASELINE_NUM_ROLLS)
+
+
+def bacon_role(opponent_score):
+    return 1 + max(opponent_score % 10, int(opponent_score/10))
+
 
 def swap_strategy(score, opponent_score):
     """This strategy rolls 0 dice when it would result in a beneficial swap and
@@ -252,15 +280,37 @@ def swap_strategy(score, opponent_score):
     5
     """
     "*** YOUR CODE HERE ***"
-    return 5 # Replace this statement
+    result = 0
+    if (score + bacon_role(opponent_score))*2 == opponent_score:
+        result = 0
+    elif (score + bacon_role(opponent_score)) == opponent_score*2:
+        result = BASELINE_NUM_ROLLS
+    else:
+        result = bacon_strategy(score, opponent_score)
+    return result
+
 
 def final_strategy(score, opponent_score):
     """Write a brief description of your final strategy.
 
     *** YOUR DESCRIPTION HERE ***
+    1.rolls 0 dice when it would result in a four-sided dice for oppoent
+    2.use swap_strategy when I am in the lead, use bacon_strategy when i am losing
+    3.rolls max_scoring_num_rolls times if it will be rolling four-sided dice
     """
     "*** YOUR CODE HERE ***"
-    return 5 # Replace this statement
+    roll_nums = BASELINE_NUM_ROLLS
+    if (score + bacon_role(opponent_score) + opponent_score) % 7 == 0:
+        roll_nums = 0
+    elif score + bacon_role(opponent_score) >= 100:
+        roll_nums = 0
+    elif (score + opponent_score) % 7 == 0:
+        roll_nums = 4
+    elif opponent_score - score > 20:
+        roll_nums = 7
+    elif (score + bacon_role(opponent_score))*2 == opponent_score:
+        roll_nums = 0
+    return roll_nums  # Replace this statement
 
 
 ##########################
